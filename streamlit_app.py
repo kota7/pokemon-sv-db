@@ -36,16 +36,15 @@ class const:
 
 
 def main():
-    with st.sidebar:
-        select_mode = st.selectbox("探すのは・・・", ("ポケモン", "技", "特性"), index=0)
-        if select_mode == "ポケモン":
-            select_pokemon_type = st.multiselect("タイプ", const.types)
-            select_skill = st.multiselect("覚える技", const.skills)
-            select_spec = st.multiselect("特性", const.specs)
-            
+    with st.sidebar:        
+        select_pokemon_type = st.multiselect("タイプ", const.types)
+        select_skill = st.multiselect("覚える技", const.skills)
+        select_spec = st.multiselect("特性", const.specs)
 
-        #select_word_pair_limit = st.selectbox("Word pair limit", (50000, 100000, 500000, 1000000), index=2)
-        #select_candidate_sample = st.selectbox("Candidate sample size", (250, 500, 1000, 2000), index=1)
+        st.markdown("----")
+        st.markdown("Data Source: [GameWith](https://gamewith.jp/pokemon-sv)")
+    col1, col2 = st.columns([1, 6])
+    select_mode = col1.selectbox("探すのは・・・", ("ポケモン", "技", "特性", "持ち物"), index=0)
     if select_mode == "ポケモン":
         filters = []
         if select_pokemon_type:
@@ -58,9 +57,11 @@ def main():
 
         df = db.get_query(f"""
         SELECT DISTINCT
-          a.uname, a.type1, a.type2, a.H, a.A, a.B, a.C, a.D, a.S, a.H + a.A + a.B + a.C + a.D + a.S AS total
+           a.uname AS name
+          ,a.type1, a.type2, a.H, a.A, a.B, a.C, a.D, a.S, a.H + a.A + a.B + a.C + a.D + a.S AS total
           {',b.skill' if select_skill else ""}
           {',c.spec' if select_spec else ""}
+          ,a.url AS url
         FROM
           monsters AS a
           INNER JOIN monster_skills AS b
@@ -70,17 +71,25 @@ def main():
         WHERE {filter}
         ORDER BY a.uname
         """)
-        st.data_editor(df, hide_index=True, width=800, height=800)
+        
+        st.data_editor(df, hide_index=True, width=900, height=800,
+                       column_config={"url": st.column_config.LinkColumn()})
     elif select_mode == "技":
         df = db.get_query("""
         SELECT * FROM skills ORDER BY skill
         """)
-        st.data_editor(df, hide_index=True, width=800, height=800)
+        st.data_editor(df, hide_index=True, width=900, height=800)
     elif select_mode == "特性":
         df = db.get_query("""
         SELECT * FROM specs ORDER BY spec
         """)
-        st.data_editor(df, hide_index=True, width=800, height=800)
+        st.data_editor(df, hide_index=True, width=900, height=800)
+
+    elif select_mode == "持ち物":
+        df = db.get_query("""
+        SELECT * FROM items ORDER BY item
+        """)
+        st.data_editor(df, hide_index=True, width=900, height=800)
 
 
 if __name__ == "__main__":
