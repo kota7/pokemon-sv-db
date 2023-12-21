@@ -59,8 +59,8 @@ def main():
         df = db.get_query(f"""
         SELECT DISTINCT
           a.uname, a.type1, a.type2, a.H, a.A, a.B, a.C, a.D, a.S, a.H + a.A + a.B + a.C + a.D + a.S AS total
-          ,{'b.skill' if select_skill else ""}
-          ,{'c.spec' if select_spec else ""}
+          {',b.skill' if select_skill else ""}
+          {',c.spec' if select_spec else ""}
         FROM
           monsters AS a
           INNER JOIN monster_skills AS b
@@ -68,7 +68,7 @@ def main():
           INNER JOIN monster_specs AS c
             ON a.uname = c.uname
         WHERE {filter}
-        ORDER BY total DESC, a.uname
+        ORDER BY a.uname
         """)
         st.data_editor(df, hide_index=True, width=800, height=800)
     elif select_mode == "技":
