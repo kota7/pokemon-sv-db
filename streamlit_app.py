@@ -36,9 +36,10 @@ class const:
 
 
 def main():
-    with st.sidebar:        
+    with st.sidebar:
         select_pokemon_type = st.multiselect("タイプ", const.types)
-        select_skill = st.multiselect("覚える技", const.skills)
+        select_skill = st.multiselect("覚える技1", const.skills)
+        select_skill2 = st.multiselect("覚える技2", const.skills)
         select_spec = st.multiselect("特性", const.specs)
 
         st.markdown("----")
@@ -51,6 +52,8 @@ def main():
             filters.append(f"a.type1 IN {tuple(select_pokemon_type + ['foo'])} OR a.type2 IN {tuple(select_pokemon_type + ['foo'])}")
         if select_skill:
             filters.append(f"b.skill IN {tuple(select_skill + ['foo'])}")
+        if select_skill2:
+            filters.append(f"b2.skill IN {tuple(select_skill2 + ['foo'])}")
         if select_spec:
             filters.append(f"c.spec IN {tuple(select_spec  + ['foo'])}")
         filter = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
@@ -60,12 +63,15 @@ def main():
            a.uname AS name
           ,a.type1, a.type2, a.H, a.A, a.B, a.C, a.D, a.S, a.H + a.A + a.B + a.C + a.D + a.S AS total
           {',b.skill' if select_skill else ""}
-          {',c.spec' if select_spec else ""}
+          {',b2.skill AS skill2' if select_skill2 else ""}
+          {''',CASE WHEN c.spec_type = '夢特性' THEN c.spec || '(夢)' ELSE c.spec END AS spec''' if select_spec else ""}
           ,a.url AS url
         FROM
           monsters AS a
           INNER JOIN monster_skills AS b
             ON a.uname = b.uname
+          INNER JOIN monster_skills AS b2
+            ON a.uname = b2.uname
           INNER JOIN monster_specs AS c
             ON a.uname = c.uname
         WHERE {filter}
