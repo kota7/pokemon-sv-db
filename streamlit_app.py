@@ -73,8 +73,8 @@ def main():
         text_item = st.text_input("持ち物検索")
 
         st.markdown("----")
-        st.markdown("Bug Report, Feedback: [GitHub](https://github.com/kota7/pokemon-sv-db/issues)")
         st.markdown("Data Source: [GameWith](https://gamewith.jp/pokemon-sv)")
+        st.markdown("Bug Report, Feedback: [GitHub](https://github.com/kota7/pokemon-sv-db/issues)")
 
     tab_monster, tab_skill, tab_spec, tab_item = st.tabs(["ポケモン", "技", "特性", "持ち物"])
     with tab_monster:
