@@ -42,6 +42,9 @@ class const:
     SELECT DISTINCT spec FROM specs ORDER BY 1
     """).values[:,0]
 
+    table_width = 1000
+    table_height = 700
+
 
 def main():
     st.markdown(
@@ -110,7 +113,7 @@ def main():
         WHERE {filter}
         ORDER BY m.uname
         """)
-        st.data_editor(df, hide_index=True, width=900, height=800,
+        st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height,
                        column_config={"url": st.column_config.LinkColumn()})
 
     with tab_skill:
@@ -132,7 +135,7 @@ def main():
         WHERE {filter}
         ORDER BY k.skill
         """)
-        st.data_editor(df, hide_index=True, width=900, height=800)
+        st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
 
     with tab_spec:
         filters = []
@@ -153,7 +156,7 @@ def main():
           WHERE {filter}
         ORDER BY p.spec
         """)
-        st.data_editor(df, hide_index=True, width=900, height=800)
+        st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
 
     with tab_item:
         filters = []
@@ -165,7 +168,7 @@ def main():
           WHERE {filter}
         ORDER BY item
         """)
-        st.data_editor(df, hide_index=True, width=900, height=800)
+        st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
 
 
 if __name__ == "__main__":
