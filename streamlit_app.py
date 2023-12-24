@@ -142,7 +142,7 @@ def main():
         if text_spec:
             filters.append(f"p.spec LIKE '%{text_spec}%' OR p.desc LIKE '%{text_spec}%'")
         if select_spec:
-            filters.append(f"mp.spec IN {tuple(select_spec + ['foo'])}")
+            filters.append(f"p.spec IN {tuple(select_spec + ['foo'])}")
         if select_pokemon_name:
             filters.append(f"mp.uname IN {tuple(select_pokemon_name + ['foo'])}")
         filter = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
