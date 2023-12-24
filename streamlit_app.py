@@ -11,89 +11,159 @@ class Database:
         self.db = sqlite3.connect("data/pokemon-sv.db")
     
     def get_query(self, query):
+        print("Start query:", query)
         return pd.read_sql(query, self.db)
+        print("End query")
 
 db = Database()
 
+@st.cache_data
+def get_query(query):
+    return db.get_query(query)
+
 class const:
-    types = db.get_query("""
+    monsters = get_query("""
+    SELECT DISTINCT uname FROM monsters
+    ORDER BY 1
+    """).values[:,0]
+
+    types = get_query("""
     SELECT DISTINCT type1 AS type FROM monsters WHERE type1 IS NOT NULL 
     UNION
     SELECT DISTINCT type2 AS type FROM monsters WHERE type2 IS NOT NULL
     ORDER BY 1
     """).values[:,0]
 
-    skills = db.get_query("""
+    skills = get_query("""
     SELECT DISTINCT skill FROM skills ORDER BY 1
     """).values[:,0]
 
-    specs = db.get_query("""
+    specs = get_query("""
     SELECT DISTINCT spec FROM specs ORDER BY 1
     """).values[:,0]
 
 
-
-
-
 def main():
+    st.markdown(
+        """
+        <style>
+            section[data-testid="stSidebar"] {
+                width: 400px !important; # Set the width to your desired value
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     with st.sidebar:
-        select_pokemon_type = st.multiselect("タイプ", const.types)
-        select_skill = st.multiselect("覚える技1", const.skills)
-        select_skill2 = st.multiselect("覚える技2", const.skills)
+        select_pokemon_name = st.multiselect("ポケモン", const.monsters)
+        col1, col2 = st.columns([1, 1])
+        select_pokemon_type = col1.multiselect("タイプ1", const.types)
+        select_pokemon_type2 = col2.multiselect("タイプ2", const.types)
+        
+        col1, col2 = st.columns([1, 1])
+        select_skill = col1.multiselect("技1", const.skills)
+        select_skill2 = col2.multiselect("技2", const.skills)
         select_spec = st.multiselect("特性", const.specs)
 
+        text_skill = st.text_input("技検索")
+        text_spec = st.text_input("特性検索")
+        text_item = st.text_input("持ち物検索")
+
         st.markdown("----")
+        st.markdown("Bug Report, Feedback: [GitHub](https://github.com/kota7/pokemon-sv-db/issues)")
         st.markdown("Data Source: [GameWith](https://gamewith.jp/pokemon-sv)")
-    col1, col2 = st.columns([1, 6])
-    select_mode = col1.selectbox("探すのは・・・", ("ポケモン", "技", "特性", "持ち物"), index=0)
-    if select_mode == "ポケモン":
+
+    tab_monster, tab_skill, tab_spec, tab_item = st.tabs(["ポケモン", "技", "特性", "持ち物"])
+    with tab_monster:
         filters = []
-        if select_pokemon_type:
-            filters.append(f"a.type1 IN {tuple(select_pokemon_type + ['foo'])} OR a.type2 IN {tuple(select_pokemon_type + ['foo'])}")
+        if select_pokemon_type and select_pokemon_type2:
+            t1 = tuple(select_pokemon_type + ["foo"])
+            t2 = tuple(select_pokemon_type2 + ["foo"])
+            filters.append(f"(m.type1 IN {t1} AND m.type2 IN {t2}) OR (m.type1 IN {t2} AND m.type2 IN {t1})")
+        elif select_pokemon_type or select_pokemon_type2:
+            t = tuple(select_pokemon_type + select_pokemon_type2 + ["foo"])
+            filters.append(f"m.type1 IN {t} OR m.type2 IN {t}")
+ 
+        if select_pokemon_name:
+            filters.append(f"m.uname IN {tuple(select_pokemon_name + ['foo'])}")
         if select_skill:
-            filters.append(f"b.skill IN {tuple(select_skill + ['foo'])}")
+            filters.append(f"mk.skill IN {tuple(select_skill + ['foo'])}")
         if select_skill2:
-            filters.append(f"b2.skill IN {tuple(select_skill2 + ['foo'])}")
+            filters.append(f"mk2.skill IN {tuple(select_skill2 + ['foo'])}")
         if select_spec:
-            filters.append(f"c.spec IN {tuple(select_spec  + ['foo'])}")
+            filters.append(f"mp.spec IN {tuple(select_spec + ['foo'])}")
         filter = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
 
-        df = db.get_query(f"""
+        df = get_query(f"""
         SELECT DISTINCT
-           a.uname AS name
-          ,a.type1, a.type2, a.H, a.A, a.B, a.C, a.D, a.S, a.H + a.A + a.B + a.C + a.D + a.S AS total
-          {',b.skill' if select_skill else ""}
-          {',b2.skill AS skill2' if select_skill2 else ""}
-          {''',CASE WHEN c.spec_type = '夢特性' THEN c.spec || '(夢)' ELSE c.spec END AS spec''' if select_spec else ""}
-          ,a.url AS url
+           m.uname AS name
+          ,m.type1, m.type2, m.H, m.A, m.B, m.C, m.D, m.S, m.H + m.A + m.B + m.C + m.D + m.S AS total
+          {',mk.skill' if select_skill else ""}
+          {',mk2.skill AS skill2' if select_skill2 else ""}
+          {''',CASE WHEN mp.spec_type = '夢特性' THEN mp.spec || '(夢)' ELSE mp.spec END AS spec''' if select_spec else ""}
+          ,m.url AS url
         FROM
-          monsters AS a
-          INNER JOIN monster_skills AS b
-            ON a.uname = b.uname
-          INNER JOIN monster_skills AS b2
-            ON a.uname = b2.uname
-          INNER JOIN monster_specs AS c
-            ON a.uname = c.uname
+          monsters AS m
+          {'INNER JOIN monster_skills AS mk ON m.uname = mk.uname' if select_skill else ''}
+          {'INNER JOIN monster_skills AS mk2 ON m.uname = mk2.uname' if select_skill2 else ''}
+          {'INNER JOIN monster_specs AS mp ON m.uname = mp.uname' if select_spec else ''}          
         WHERE {filter}
-        ORDER BY a.uname
+        ORDER BY m.uname
         """)
-        
         st.data_editor(df, hide_index=True, width=900, height=800,
                        column_config={"url": st.column_config.LinkColumn()})
-    elif select_mode == "技":
-        df = db.get_query("""
-        SELECT * FROM skills ORDER BY skill
-        """)
-        st.data_editor(df, hide_index=True, width=900, height=800)
-    elif select_mode == "特性":
-        df = db.get_query("""
-        SELECT * FROM specs ORDER BY spec
+
+    with tab_skill:
+        filters = []
+        if text_skill:
+            filters.append(f"k.skill LIKE '%{text_skill}%' OR k.desc LIKE '%{text_skill}%'")
+        if select_skill or select_skill2:
+            filters.append(f"k.skill IN {tuple(select_skill + select_skill2 + ['foo'])} OR desc IN {tuple(select_skill + select_skill2 + ['foo'])}")
+        if select_pokemon_name:
+            filters.append(f"mk.uname IN {tuple(select_pokemon_name + ['foo'])}")
+        filter = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
+        df = get_query(f"""
+        SELECT DISTINCT
+          {'mk.uname,' if select_pokemon_name else ''}
+          k.*
+        FROM
+          skills AS k
+          {'INNER JOIN monster_skills AS mk ON k.skill = mk.skill' if select_pokemon_name else ''}
+        WHERE {filter}
+        ORDER BY k.skill
         """)
         st.data_editor(df, hide_index=True, width=900, height=800)
 
-    elif select_mode == "持ち物":
-        df = db.get_query("""
-        SELECT * FROM items ORDER BY item
+    with tab_spec:
+        filters = []
+        if text_spec:
+            filters.append(f"p.spec LIKE '%{text_spec}%' OR p.desc LIKE '%{text_spec}%'")
+        if select_spec:
+            filters.append(f"mp.spec IN {tuple(select_spec + ['foo'])}")
+        if select_pokemon_name:
+            filters.append(f"mp.uname IN {tuple(select_pokemon_name + ['foo'])}")
+        filter = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
+        df = get_query(f"""
+        SELECT
+          {'mp.uname, mp.spec_type AS spec_type,' if select_pokemon_name else ''}
+          p.*
+        FROM
+          specs AS p
+          {'INNER JOIN monster_specs AS mp ON p.spec = mp.spec' if select_pokemon_name else ''}
+          WHERE {filter}
+        ORDER BY p.spec
+        """)
+        st.data_editor(df, hide_index=True, width=900, height=800)
+
+    with tab_item:
+        filters = []
+        if text_item:
+            filters.append(f"item LIKE '%{text_item}%' OR desc LIKE '%{text_item}%'")
+        filter = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
+        df = get_query(f"""
+        SELECT * FROM items
+          WHERE {filter}
+        ORDER BY item
         """)
         st.data_editor(df, hide_index=True, width=900, height=800)
 
