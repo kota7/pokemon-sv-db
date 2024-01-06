@@ -211,7 +211,8 @@ def main():
         WHERE {filter_}
         ORDER BY {order_}
         """)
-        st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
+        st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height,
+                       column_config={"url": st.column_config.LinkColumn()})
 
     with tab_spec:
         filters = []
