@@ -4,11 +4,15 @@
 import sqlite3
 import streamlit as st
 import pandas as pd
+
+from utils import normalize_kana
 st.set_page_config(layout="wide")
+
 
 class Database:
     def __init__(self):
         self.db = sqlite3.connect("data/pokemon-sv.db")
+        self.db.create_function("normalize_kana", 1, normalize_kana)
     
     def get_query(self, query):
         print("Start query:", query)
@@ -35,11 +39,11 @@ class const:
     """).values[:,0]
 
     skills = get_query("""
-    SELECT DISTINCT skill FROM skills ORDER BY 1
+    SELECT DISTINCT skill FROM skills ORDER BY normalize_kana(skill)
     """).values[:,0]
 
     specs = get_query("""
-    SELECT DISTINCT spec FROM specs ORDER BY 1
+    SELECT DISTINCT spec FROM specs ORDER BY normalize_kana(spec)
     """).values[:,0]
 
     skill_attrs = [c for c in get_query("""
@@ -110,9 +114,9 @@ def main():
                                          value=[const.power_min, const.power_max], step=5)
         slider_skill_hit = col2.slider("命中率", min_value=const.hit_min, max_value=const.hit_max,
                                        value=[const.hit_min, const.hit_max], step=5)
-        text_skill = st.text_input("技検索")
-        text_spec = st.text_input("特性検索")
-        text_item = st.text_input("持ち物検索")
+        text_skill = st.text_input("技自由検索")
+        text_spec = st.text_input("特性自由検索")
+        text_item = st.text_input("持ち物自由検索")
 
         st.markdown("----")
         st.markdown("Data Source: [GameWith](https://gamewith.jp/pokemon-sv)")
@@ -153,7 +157,7 @@ def main():
           {'INNER JOIN monster_skills AS mk2 ON m.uname = mk2.uname' if select_skill2 else ''}
           {'INNER JOIN monster_specs AS mp ON m.uname = mp.uname' if select_spec else ''}          
         WHERE {filter}
-        ORDER BY m.uname
+        ORDER BY normalize_kana(m.uname)
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height,
                        column_config={"url": st.column_config.LinkColumn()})
@@ -169,8 +173,6 @@ def main():
         if select_skill_contact:
             vals = [0 if c == "非接触" else 1 if c == "接触" else 99 for c in select_skill_contact] + [99]
             filters.append(f"k.contact IN {tuple(vals)}")
-        if select_skill or select_skill2:
-            filters.append(f"k.skill IN {tuple(select_skill + select_skill2 + ['foo'])} OR desc IN {tuple(select_skill + select_skill2 + ['foo'])}")
         if select_pokemon_name:
             filters.append(f"mk.uname IN {tuple(select_pokemon_name + ['foo'])}")
         if select_skill_attr:
@@ -178,8 +180,17 @@ def main():
                 filters.append(f"k.{attr}")
         filters.append("k.pw BETWEEN {} AND {}".format(*slider_skill_power))
         filters.append("k.hit BETWEEN {} AND {}".format(*slider_skill_hit))
-
         filter_ = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
+
+        orders = []
+        if select_skill or select_skill2:
+            vals = tuple(select_skill + select_skill2 + ['foo'])
+            orders.append(f"CASE WHEN k.skill IN {vals} THEN 0 ELSE 1 END")
+        if select_pokemon_name:
+            orders.append("normalize_kana(mk.uname), mk.skill_order")
+        orders.append("normalize_kana(k.skill)")
+        order_ = ",".join(orders)
+
         df = get_query(f"""
         SELECT DISTINCT
           {'mk.uname,' if select_pokemon_name else ''}
@@ -198,7 +209,7 @@ def main():
           skills AS k
           {'INNER JOIN monster_skills AS mk ON k.skill = mk.skill' if select_pokemon_name else ''}
         WHERE {filter_}
-        ORDER BY {'mk.skill_order,' if select_pokemon_name else ''} k.skill
+        ORDER BY {order_}
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
 
@@ -219,7 +230,7 @@ def main():
           specs AS p
           {'INNER JOIN monster_specs AS mp ON p.spec = mp.spec' if select_pokemon_name else ''}
           WHERE {filter}
-        ORDER BY p.spec
+        ORDER BY normalize_kana(p.spec)
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
 
@@ -231,7 +242,7 @@ def main():
         df = get_query(f"""
         SELECT * FROM items
           WHERE {filter}
-        ORDER BY item
+        ORDER BY normalize_kana(item)
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
 
