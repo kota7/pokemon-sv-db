@@ -1,1 +1,1 @@
-jaconv
+jaconv>="0.3"
