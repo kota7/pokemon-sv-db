@@ -99,7 +99,9 @@ def main():
         col1, col2 = st.columns([1, 1])
         select_skill = col1.multiselect("技1", const.skills)
         select_skill2 = col2.multiselect("技2", const.skills)
-        select_spec = st.multiselect("特性", const.specs)
+        col1, col2 = st.columns([6, 4])
+        select_spec = col1.multiselect("特性", const.specs)
+        select_evolve = col2.multiselect("進化形", ["最終形のみ", "最終形除く"])
         st.markdown("----")
         
         col1, col2 = st.columns([1, 1])
@@ -132,7 +134,9 @@ def main():
         elif select_pokemon_type or select_pokemon_type2:
             t = tuple(select_pokemon_type + select_pokemon_type2 + ["foo"])
             filters.append(f"m.type1 IN {t} OR m.type2 IN {t}")
- 
+        if select_evolve:
+            vals = [1 if c == "最終形のみ" else 0 if c == "再集計除く" else 99 for c in select_evolve] + [99]
+            filters.append(f"m.evolve_final IN {tuple(vals)}")
         if select_pokemon_name:
             filters.append(f"m.uname IN {tuple(select_pokemon_name + ['foo'])}")
         if select_skill:
@@ -147,6 +151,7 @@ def main():
         SELECT DISTINCT
            m.uname AS name
           ,m.type1, m.type2, m.H, m.A, m.B, m.C, m.D, m.S, m.H + m.A + m.B + m.C + m.D + m.S AS total
+          ,m.evolve_final AS final
           {',mk.skill' if select_skill else ""}
           {',mk2.skill AS skill2' if select_skill2 else ""}
           {''',CASE WHEN mp.spec_type = '夢特性' THEN mp.spec || '(夢)' ELSE mp.spec END AS spec''' if select_spec else ""}
