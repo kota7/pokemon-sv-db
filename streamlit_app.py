@@ -101,7 +101,7 @@ def main():
         select_skill2 = col2.multiselect("技2", const.skills)
         col1, col2 = st.columns([6, 4])
         select_spec = col1.multiselect("特性", const.specs)
-        select_evolve = col2.multiselect("進化形", ["最終形のみ", "最終形除く"])
+        select_evolve = col2.multiselect("進化形", ["最終形のみ", "最終形以外"])
         st.markdown("----")
         
         col1, col2 = st.columns([1, 1])
@@ -135,7 +135,7 @@ def main():
             t = tuple(select_pokemon_type + select_pokemon_type2 + ["foo"])
             filters.append(f"m.type1 IN {t} OR m.type2 IN {t}")
         if select_evolve:
-            vals = [1 if c == "最終形のみ" else 0 if c == "再集計除く" else 99 for c in select_evolve] + [99]
+            vals = [1 if c == "最終形のみ" else 0 if c == "最終形以外" else 99 for c in select_evolve] + [99]
             filters.append(f"m.evolve_final IN {tuple(vals)}")
         if select_pokemon_name:
             filters.append(f"m.uname IN {tuple(select_pokemon_name + ['foo'])}")
