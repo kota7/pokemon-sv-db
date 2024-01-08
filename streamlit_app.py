@@ -79,6 +79,11 @@ class const:
     table_height = 700
 
 
+# initialize state variables
+for key in ["select_skill1_value", "select_skill2_value", "select_spec_value"]:
+    if key not in st.session_state:
+          st.session_state[key] = None
+
 def main():
     st.markdown(
         """
@@ -90,6 +95,8 @@ def main():
         """,
         unsafe_allow_html=True,
     )
+    tab_monster, tab_skill, tab_spec, tab_item = st.tabs(["ポケモン", "技", "特性", "持ち物"])
+
     with st.sidebar:
         select_pokemon_name = st.multiselect("ポケモン", const.monsters)
         col1, col2 = st.columns([1, 1])
@@ -97,10 +104,17 @@ def main():
         select_pokemon_type2 = col2.multiselect("タイプ2", const.types)
         
         col1, col2 = st.columns([1, 1])
-        select_skill = col1.multiselect("技1", const.skills)
-        select_skill2 = col2.multiselect("技2", const.skills)
+        # If session_state has the desired values to use, we use it as default
+        # and we delete the value (we consumed it just once)
+        # Otherwise, the button does not work when we delete the values and hit the button again,
+        # since there is no value change
+        select_skill = col1.multiselect("技1", const.skills, default=st.session_state["select_skill1_value"])
+        select_skill2 = col2.multiselect("技2", const.skills, default=st.session_state["select_skill2_value"])
+        st.session_state["select_skill1_value"] = None
+        st.session_state["select_skill2_value"] = None
         col1, col2 = st.columns([6, 4])
-        select_spec = col1.multiselect("特性", const.specs)
+        select_spec = col1.multiselect("特性", const.specs, default=st.session_state["select_spec_value"])
+        st.session_state["select_spec_value"] = None
         select_evolve = col2.multiselect("進化形", ["最終形のみ", "最終形以外"])
         st.markdown("----")
         
@@ -124,7 +138,6 @@ def main():
         st.markdown("Data Source: [GameWith](https://gamewith.jp/pokemon-sv), [Game8](https://game8.jp/pokemon-sv)")
         st.markdown("Bug Report, Feedback: [GitHub](https://github.com/kota7/pokemon-sv-db/issues)")
 
-    tab_monster, tab_skill, tab_spec, tab_item = st.tabs(["ポケモン", "技", "特性", "持ち物"])
     with tab_monster:
         filters = []
         if select_pokemon_type and select_pokemon_type2:
@@ -220,6 +233,15 @@ def main():
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height,
                        column_config={"url": st.column_config.LinkColumn()})
+        col1, col2, col3 = st.columns([2,2,7])
+        button_apply_skill1 = col1.button("技フィルタ1へコピー")
+        button_apply_skill2 = col2.button("技フィルタ2へコピー")
+        if button_apply_skill1:
+            st.session_state["select_skill1_value"] = tuple(df.skill.tolist())
+            st.rerun()
+        if button_apply_skill2:
+            st.session_state["select_skill2_value"] = tuple(df.skill.tolist())
+            st.rerun()
 
     with tab_spec:
         filters = []
@@ -241,6 +263,10 @@ def main():
         ORDER BY normalize_kana(p.spec)
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
+        button_apply_spec = st.button("特性フィルタへコピー")
+        if button_apply_spec:
+            st.session_state["select_spec_value"] = tuple(df.spec.tolist())
+            st.rerun()
 
     with tab_item:
         filters = []
