@@ -28,22 +28,26 @@ def get_query(query):
 class const:
     monsters = get_query("""
     SELECT DISTINCT uname FROM monsters
-    ORDER BY 1
+    ORDER BY normalize_kana(uname)
     """).values[:,0]
 
     types = get_query("""
-    SELECT DISTINCT type1 AS type FROM monsters WHERE type1 IS NOT NULL 
-    UNION
-    SELECT DISTINCT type2 AS type FROM monsters WHERE type2 IS NOT NULL
-    ORDER BY 1
+    SELECT * FROM (
+        SELECT DISTINCT type1 AS type FROM monsters WHERE type1 IS NOT NULL 
+        UNION
+        SELECT DISTINCT type2 AS type FROM monsters WHERE type2 IS NOT NULL
+    )
+    ORDER BY type
     """).values[:,0]
 
     skills = get_query("""
-    SELECT DISTINCT skill FROM skills ORDER BY normalize_kana(skill)
+    SELECT DISTINCT skill FROM skills
+    ORDER BY normalize_kana(skill)
     """).values[:,0]
 
     specs = get_query("""
-    SELECT DISTINCT spec FROM specs ORDER BY normalize_kana(spec)
+    SELECT DISTINCT spec FROM specs
+    ORDER BY normalize_kana(spec)
     """).values[:,0]
 
     skill_attrs = [c for c in get_query("""
@@ -51,7 +55,8 @@ class const:
     """).columns if c[0] < "a" or c[0] >= "z"]
 
     skill_targets = get_query("""
-    SELECT DISTINCT target FROM skills ORDER BY 1
+    SELECT DISTINCT target FROM skills
+    ORDER BY normalize_kana(target)
     """).values[:,0]
 
     power_max = get_query("""
@@ -71,7 +76,8 @@ class const:
     """).values[0,0]
 
     skill_percents = get_query("""
-    SELECT DISTINCT CASE WHEN percent IS NULL THEN 'NA' ELSE CAST(percent AS TEXT) END AS p FROM skills ORDER BY percent NULLS LAST
+    SELECT DISTINCT CASE WHEN percent IS NULL THEN 'NA' ELSE CAST(percent AS TEXT) END AS p FROM skills
+    ORDER BY percent NULLS LAST
     """).values[:,0]
 
 
@@ -80,7 +86,7 @@ class const:
 
 
 # initialize state variables
-for key in ["select_skill1_value", "select_skill2_value", "select_spec_value"]:
+for key in ["select_pokemon_name_value", "select_skill1_value", "select_skill2_value", "select_spec_value"]:
     if key not in st.session_state:
           st.session_state[key] = None
 
@@ -98,7 +104,8 @@ def main():
     tab_monster, tab_skill, tab_spec, tab_item = st.tabs(["ポケモン", "技", "特性", "持ち物"])
 
     with st.sidebar:
-        select_pokemon_name = st.multiselect("ポケモン", const.monsters)
+        select_pokemon_name = st.multiselect("ポケモン", const.monsters, default=st.session_state["select_pokemon_name_value"])
+        st.session_state["select_pokemon_name_value"] = None
         col1, col2 = st.columns([1, 1])
         select_pokemon_type = col1.multiselect("タイプ1", const.types)
         select_pokemon_type2 = col2.multiselect("タイプ2", const.types)
@@ -181,6 +188,10 @@ def main():
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height,
                        column_config={"url": st.column_config.LinkColumn()})
+        button_apply_pokemon_name = st.button("ポケモンフィルタへコピー")
+        if button_apply_pokemon_name:
+            st.session_state["select_pokemon_name_value"] = tuple(df.name.tolist())
+            st.rerun()
 
     with tab_skill:
         filters = []
