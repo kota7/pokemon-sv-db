@@ -165,7 +165,7 @@ def main():
             filters.append(f"mk2.skill IN {tuple(select_skill2 + ['foo'])}")
         if select_spec:
             filters.append(f"mp.spec IN {tuple(select_spec + ['foo'])}")
-        filter = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
+        filter_ = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
 
         df = get_query(f"""
         SELECT DISTINCT
@@ -183,7 +183,7 @@ def main():
           {'INNER JOIN monster_skills AS mk ON m.uname = mk.uname' if select_skill else ''}
           {'INNER JOIN monster_skills AS mk2 ON m.uname = mk2.uname' if select_skill2 else ''}
           {'INNER JOIN monster_specs AS mp ON m.uname = mp.uname' if select_spec else ''}          
-        WHERE {filter}
+        WHERE {filter_}
         ORDER BY normalize_kana(m.uname)
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height,
@@ -258,11 +258,19 @@ def main():
         filters = []
         if text_spec:
             filters.append(f"p.spec LIKE '%{text_spec}%' OR p.desc LIKE '%{text_spec}%'")
-        if select_spec:
-            filters.append(f"p.spec IN {tuple(select_spec + ['foo'])}")
         if select_pokemon_name:
             filters.append(f"mp.uname IN {tuple(select_pokemon_name + ['foo'])}")
-        filter = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
+        filter_ = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
+        print(filter_)
+        orders = []
+        if select_spec:
+            orders.append(f"CASE WHEN p.spec IN {tuple(select_spec + ['foo'])} THEN 0 ELSE 1 END")
+        if select_pokemon_name:
+            orders.append("normalize_kana(mp.uname)")
+            orders.append("normalize_kana(mp.spec_type)")
+        orders.append("normalize_kana(p.spec)")
+        order_ = ",".join(orders)
+
         df = get_query(f"""
         SELECT
           {'mp.uname, mp.spec_type AS spec_type,' if select_pokemon_name else ''}
@@ -270,8 +278,8 @@ def main():
         FROM
           specs AS p
           {'INNER JOIN monster_specs AS mp ON p.spec = mp.spec' if select_pokemon_name else ''}
-          WHERE {filter}
-        ORDER BY normalize_kana(p.spec)
+        WHERE {filter_}
+        ORDER BY {order_}
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
         button_apply_spec = st.button("特性フィルタへコピー")
@@ -283,10 +291,10 @@ def main():
         filters = []
         if text_item:
             filters.append(f"item LIKE '%{text_item}%' OR desc LIKE '%{text_item}%'")
-        filter = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
+        filter_ = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
         df = get_query(f"""
         SELECT * FROM items
-          WHERE {filter}
+        WHERE {filter_}
         ORDER BY normalize_kana(item)
         """)
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
