@@ -164,9 +164,9 @@ def main():
         SELECT DISTINCT
            m.uname AS name
           ,m.type1, m.type2, m.H, m.A, m.B, m.C, m.D, m.S, m.H + m.A + m.B + m.C + m.D + m.S AS total
-          ,m.evolve_final AS final
-          ,m.gender
           ,m.weight
+          ,m.gender
+          ,m.evolve_final AS final
           {',mk.skill' if select_skill else ""}
           {',mk2.skill AS skill2' if select_skill2 else ""}
           {''',CASE WHEN mp.spec_type = '夢特性' THEN mp.spec || '(夢)' ELSE mp.spec END AS spec''' if select_spec else ""}
