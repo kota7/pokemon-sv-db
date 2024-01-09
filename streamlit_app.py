@@ -107,7 +107,7 @@ def main():
         # Here, we sinc the selected value with the session state so that the pre-selected value can be 
         # changed programatically as well (e.g. copy buttons below the tables)
         select_pokemon_name = st.multiselect("ポケモン", const.monsters, default=st.session_state["select_pokemon_name_value"])
-        st.session_state["select_pokemon_name_value"] = select_pokemon_name
+        #st.session_state["select_pokemon_name_value"] = select_pokemon_name
         col1, col2 = st.columns([1, 1])
         select_pokemon_type = col1.multiselect("タイプ1", const.types)
         select_pokemon_type2 = col2.multiselect("タイプ2", const.types)
@@ -115,11 +115,11 @@ def main():
         col1, col2 = st.columns([1, 1])
         select_skill = col1.multiselect("技1", const.skills, default=st.session_state["select_skill1_value"])
         select_skill2 = col2.multiselect("技2", const.skills, default=st.session_state["select_skill2_value"])
-        st.session_state["select_skill1_value"] = select_skill
-        st.session_state["select_skill2_value"] = select_skill2
+        #st.session_state["select_skill1_value"] = select_skill
+        #st.session_state["select_skill2_value"] = select_skill2
         col1, col2 = st.columns([6, 4])
         select_spec = col1.multiselect("特性", const.specs, default=st.session_state["select_spec_value"])
-        st.session_state["select_spec_value"] = select_spec
+        #st.session_state["select_spec_value"] = select_spec
         select_evolve = col2.multiselect("進化形", ["最終形のみ", "最終形以外"])
         st.markdown("----")
         
