@@ -117,17 +117,21 @@ def main():
         select_skill2 = col2.multiselect("技2", const.skills, default=st.session_state["select_skill2_value"])
         #st.session_state["select_skill1_value"] = select_skill
         #st.session_state["select_skill2_value"] = select_skill2
-        col1, col2 = st.columns([6, 4])
-        select_spec = col1.multiselect("特性", const.specs, default=st.session_state["select_spec_value"])
+        select_spec = st.multiselect("特性", const.specs, default=st.session_state["select_spec_value"])
         #st.session_state["select_spec_value"] = select_spec
-        select_evolve = col2.multiselect("進化形", ["最終形のみ", "最終形以外"])
+        col1, col2 = st.columns([1, 1])
+        select_evolve = col1.multiselect("進化形", ["最終形のみ", "最終形以外"])
+        col2.markdown("")
+        col2.markdown("")
+        check_exclude_prohibited = col2.checkbox("禁止を除く")
+
         st.markdown("----")
         
         col1, col2 = st.columns([1, 1])
         select_skill_class = col1.multiselect("種別", ["物理", "特殊", "変化"])
         select_skill_contact = col2.multiselect("接触有無", ["接触", "非接触"])
         col1, col2 = st.columns([7, 5])
-        select_skill_attr = col1.multiselect("技特徴", const.skill_attrs)
+        select_skill_attr = col1.multiselect("技特徴 (OR検索)", const.skill_attrs)
         select_skill_target = col2.multiselect("対象", const.skill_targets)
         #select_skill_percent = col2.multiselect("確率", const.skill_percents)
         col1, col2 = st.columns([1, 1])
@@ -157,6 +161,8 @@ def main():
             filters.append(f"m.evolve_final IN {tuple(vals)}")
         if select_pokemon_name:
             filters.append(f"m.uname IN {tuple(select_pokemon_name + ['foo'])}")
+        if check_exclude_prohibited:
+            filters.append(f"m.prohibited = 0")
         if select_skill:
             filters.append(f"mk.skill IN {tuple(select_skill + ['foo'])}")
         if select_skill2:
@@ -205,8 +211,10 @@ def main():
         if select_pokemon_name:
             filters.append(f"mk.uname IN {tuple(select_pokemon_name + ['foo'])}")
         if select_skill_attr:
-            for attr in select_skill_attr:
-                filters.append(f"k.{attr}")
+            # this part is OR filter
+            filters.append(" OR ".join(f"k.{attr}" for attr in select_skill_attr))
+            #for attr in select_skill_attr:
+            #    filters.append(f"k.{attr}")
         filters.append("k.pw BETWEEN {} AND {}".format(*slider_skill_power))
         filters.append("k.hit BETWEEN {} AND {}".format(*slider_skill_hit))
         filter_ = " AND ".join(f"( {f} )" for f in filters) if filters else "1"
