@@ -123,7 +123,7 @@ def main():
         select_evolve = col1.multiselect("進化形", ["最終形のみ", "最終形以外"])
         col2.markdown("")
         col2.markdown("")
-        check_exclude_prohibited = col2.checkbox("禁止を除く")
+        check_exclude_prohibited = col2.checkbox("禁止を除く", value=True)
 
         st.markdown("----")
         
