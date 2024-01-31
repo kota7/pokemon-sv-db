@@ -195,7 +195,7 @@ def main():
                        column_config={"url": st.column_config.LinkColumn()})
         button_apply_pokemon_name = st.button("ポケモンフィルタへコピー")
         if button_apply_pokemon_name:
-            st.session_state["select_pokemon_name_value"] = tuple(df.name.tolist())
+            st.session_state["select_pokemon_name_value"] = tuple(dict.fromkeys(df.name.tolist()))
             st.rerun()
 
     with tab_skill:
@@ -255,10 +255,10 @@ def main():
         button_apply_skill1 = col1.button("技フィルタ1へコピー")
         button_apply_skill2 = col2.button("技フィルタ2へコピー")
         if button_apply_skill1:
-            st.session_state["select_skill1_value"] = tuple(df.skill.tolist())
+            st.session_state["select_skill1_value"] = tuple(dict.fromkeys(df.skill.tolist()))
             st.rerun()
         if button_apply_skill2:
-            st.session_state["select_skill2_value"] = tuple(df.skill.tolist())
+            st.session_state["select_skill2_value"] = tuple(dict.fromkeys(df.skill.tolist()))
             st.rerun()
 
     with tab_spec:
@@ -291,7 +291,7 @@ def main():
         st.data_editor(df, hide_index=True, width=const.table_width, height=const.table_height)
         button_apply_spec = st.button("特性フィルタへコピー")
         if button_apply_spec:
-            st.session_state["select_spec_value"] = tuple(df.spec.tolist())
+            st.session_state["select_spec_value"] = tuple(dict.fromkeys(df.spec.tolist()))
             st.rerun()
 
     with tab_item:
